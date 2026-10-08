@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voicecord</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Ginto+Nord:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon"></div>
+                <div>
+                    <div class="logo-text">Voicecord</div>
+                    <div class="logo-version">Discord Manager</div>
+                </div>
+            </div>
+
+            <div class="nav-section-label">Navigation</div>
+            <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+                <span class="nav-icon"></span> Dashboard
+            </div>
+            <div class="nav-item" id="nav-vc" onclick="showSection('vc')">
+                <span class="nav-icon"></span> Voice Channels
+            </div>
+
+            <div class="nav-section-label">Actions</div>
+            <div class="nav-item" onclick="openAddModal()">
+                <span class="nav-icon">➕</span> Add Token
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="nav-item danger" onclick="logout()">
+                    <span class="nav-icon"></span> Logout
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div id="section-dashboard" class="section-view active">
+                <header class="topbar">
+                    <div class="topbar-title">
+                        <h2>Tokens Overview</h2>
+                        <p class="topbar-sub">Manage your Discord accounts in one place</p>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn" onclick="openAddModal()">
+                            <span>+</span> New Token
+                        </button>
+                    </div>
+                </header>
+
+                <div class="content-area">
+                    <div class="summary-bar">
+                        <div class="summary-item premium-stat">
+                            <span class="si-icon"></span>
+                            <div>
+                                <div class="si-val" id="stat-total">0</div>
+                                <div class="si-lbl">Total Tokens</div>
+                            </div>
+                        </div>
+                        <div class="summary-item premium-stat">
+                            <span class="si-icon"></span>
+                            <div>
+                                <div class="si-val" id="stat-online">0</div>
+                                <div class="si-lbl">Online</div>
+                            </div>
+                        </div>
+                        <div class="summary-item premium-stat">
+                            <span class="si-icon"></span>
+                            <div>
+                                <div class="si-val" id="stat-rpc">0</div>
+                                <div class="si-lbl">Running RPC</div>
+                            </div>
+                        </div>
+                        <div class="summary-item premium-stat">
+                            <span class="si-icon"></span>
+                            <div>
+                                <div class="si-val" id="stat-vc">0</div>
+                                <div class="si-lbl">In Voice</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bulk-actions-panel">
+                        <span class="bulk-label">Operations</span>
+                        <div class="bulk-btns">
+                            <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus('online')">Set All Online</button>
+                            <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus('idle')">Set All Idle</button>
+                            <button class="btn btn-secondary btn-sm" onclick="bulkChangeStatus('dnd')">Set All DND</button>
+                            <button class="btn btn-warning btn-sm" onclick="bulkRestart()">Restart All</button>
+                            <button class="btn btn-danger btn-sm" onclick="bulkDisconnectVC()">Disconnect All VCs</button>
+                        </div>
+                    </div>
+
+                    <div class="tokens-grid" id="token-grid"></div>
+                </div>
+            </div>
+
+            <div id="section-vc" class="section-view">
+                <header class="topbar">
+                    <div class="topbar-title">
+                        <h2>Voice Channel Manager</h2>
+                        <p class="topbar-sub">Join or disconnect tokens from voice channels</p>
+                    </div>
+                </header>
+                <div class="content-area">
+                    <div class="vc-list" id="vc-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div class="modal-overlay" id="token-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add New Token</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="token-form">
+                    <div class="form-section">
+                        <div class="form-section-title">Account</div>
+                        <div class="form-group">
+                            <label>Discord Token</label>
+                            <input type="text" id="t-token" placeholder="MTIzNDU2..." required>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">Profile</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="t-status">
+                                    <option value="online">Online (Green)</option>
+                                    <option value="idle">Idle (Yellow)</option>
+                                    <option value="dnd">Do Not Disturb (Red)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Platform</label>
+                                <select id="t-platform">
+                                    <option value="pc">PC</option>
+                                    <option value="mobile">Mobile</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Status Text</label>
+                            <input type="text" id="t-status-text" placeholder="Hello World">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">Rich Presence (RPC)</div>
+                        <div class="info-box">
+                            For images use Asset Names from Discord Developer Portal or a direct URL. <strong>Application ID is required when using RPC buttons.</strong>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Application ID (Client ID)</label>
+                                <input type="text" id="t-app-id" placeholder="Required for buttons">
+                            </div>
+                            <div class="form-group">
+                                <label>Activity Type</label>
+                                <select id="t-rpc-type" onchange="toggleStreamingUrl()">
+                                    <option value="playing">Playing</option>
+                                    <option value="streaming">Streaming</option>
+                                    <option value="listening">Listening</option>
+                                    <option value="watching">Watching</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" id="streaming-url-group" style="display:none;">
+                            <label>Streaming URL (Twitch/YouTube)</label>
+                            <input type="url" id="t-rpc-url" placeholder="https://twitch.tv/example">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Activity Name</label>
+                                <input type="text" id="t-rpc-name" placeholder="Minecraft">
+                            </div>
+                            <div class="form-group">
+                                <label>Details</label>
+                                <input type="text" id="t-rpc-details" placeholder="In a match">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="t-rpc-state" placeholder="Winning">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Large Image Asset / URL</label>
+                                <input type="text" id="t-rpc-large-img" placeholder="asset name or https://...">
+                            </div>
+                            <div class="form-group">
+                                <label>Large Image Text</label>
+                                <input type="text" id="t-rpc-large-text" placeholder="Hover text">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Small Image Asset / URL</label>
+                                <input type="text" id="t-rpc-small-img" placeholder="asset name or https://...">
+                            </div>
+                            <div class="form-group">
+                                <label>Small Image Text</label>
+                                <input type="text" id="t-rpc-small-text" placeholder="Hover text">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start Timestamp</label>
+                                <input type="text" id="t-rpc-timestamp-start" placeholder="e.g. 1507665886 or auto">
+                                <span class="hint">Use 'auto' to start from connect time</span>
+                            </div>
+                            <div class="form-group">
+                                <label>End Timestamp</label>
+                                <input type="text" id="t-rpc-timestamp-end" placeholder="e.g. 1507665886">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">RPC Buttons</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Button 1 Label</label>
+                                <input type="text" id="t-rpc-btn1-label" placeholder="e.g. Website" maxlength="32">
+                            </div>
+                            <div class="form-group">
+                                <label>Button 1 URL</label>
+                                <input type="url" id="t-rpc-btn1-url" placeholder="https://example.com">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Button 2 Label</label>
+                                <input type="text" id="t-rpc-btn2-label" placeholder="e.g. Join Server" maxlength="32">
+                            </div>
+                            <div class="form-group">
+                                <label>Button 2 URL</label>
+                                <input type="url" id="t-rpc-btn2-url" placeholder="https://discord.gg/...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">Auto-Join Voice</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Server (Guild) ID</label>
+                                <input type="text" id="t-vc-guild">
+                            </div>
+                            <div class="form-group">
+                                <label>Channel ID</label>
+                                <input type="text" id="t-vc-channel">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label class="checkbox-row">
+                                <input type="checkbox" id="t-vc-mute" checked>
+                                <span class="cb-label">Self Mute</span>
+                            </label>
+                            <label class="checkbox-row">
+                                <input type="checkbox" id="t-vc-deaf">
+                                <span class="cb-label">Self Deaf</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn" onclick="saveToken()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
